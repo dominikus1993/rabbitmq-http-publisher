@@ -53,8 +53,10 @@ func Confirm() {
 
 }
 
-func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string) *amqp.Channel {
+func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string) func (message *[]byte) error {
 	c := DeclareExchange(ch, exchangeName)
-	c.Publish(exchangeName, "", false, false, amqp.Publishing{ ContentType: "application/json", Body: msg.Value})
+	return func (message *[]byte) error {
+		return c.Publish(exchangeName, routeKey, false, false, amqp.Publishing{ ContentType: "application/json", Body: *message})
+	};
 }
 
