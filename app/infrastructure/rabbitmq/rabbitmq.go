@@ -7,6 +7,11 @@ import (
 	"github.com/streadway/amqp"
 )
 
+type Confirmable interface {
+	Confirm(chan amqp.Confirmation)
+}
+
+
 func GetAmpqConnection() string {
 	return env.GetEnvOrDefault("RabbitMq__Connection", "amqp://guest:guest@127.0.0.1:5672/")
 }
@@ -49,9 +54,6 @@ func DeclareExchange(ch *amqp.Channel, exchaneName string) *amqp.Channel {
 	return ch
 }
 
-func Confirm() {
-
-}
 
 func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string) func (message *[]byte) error {
 	c := DeclareExchange(ch, exchangeName)
