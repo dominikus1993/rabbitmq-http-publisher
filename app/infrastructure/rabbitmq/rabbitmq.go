@@ -3,12 +3,12 @@ package rabbitmq
 import (
 	"log"
 	"os"
-	"rossmannpl-backend-kafka-producer/app/infrastructure/env"
+	"rabbitmq-http-publisher/app/infrastructure/env"
 	"github.com/streadway/amqp"
 )
 
 func GetAmpqConnection() string {
-	return env.GetEnvOrDefault("RabbitMq__Connection", "amqp://user:dCbCI41Gk5@127.0.0.1:5672/")
+	return env.GetEnvOrDefault("RabbitMq__Connection", "amqp://guest:guest@127.0.0.1:5672/")
 }
 
 func ConnectToRabbitMq(ampqConnectionString string) *amqp.Connection {
@@ -35,7 +35,7 @@ func CloseRabbit(conn *amqp.Connection, ch *amqp.Channel) {
 	}
 }
 
-func DeclareQueue(ch *amqp.Channel, exchaneName, queueSufix string) <-chan amqp.Delivery {
+func DeclareExchange(ch *amqp.Channel, exchaneName string) *amqp.Channel {
 	err := ch.ExchangeDeclare(
 		exchaneName, // name
 		"topic",     // type
@@ -45,36 +45,16 @@ func DeclareQueue(ch *amqp.Channel, exchaneName, queueSufix string) <-chan amqp.
 		false,       // no-wait
 		nil,         // arguments
 	)
-	
-	env.FailOnError(err, "Failed to declare an exchange")
-	q, err := ch.QueueDeclare(
-		exchaneName+"-"+queueSufix, // name
-		true,                       // durable
-		false,                      // delete when usused
-		false,                      // exclusive
-		false,                      // no-wait
-		nil,                        // arguments
-	)
-	env.FailOnError(err, "Failed to declare a queue")
-
-	err = ch.QueueBind(
-		q.Name,      // queue name
-		"#",         // routing key
-		exchaneName, // exchange
-		false,
-		nil,
-	)
-	env.FailOnError(err, "Failed to bind a queue")
-
-	msgs, err := ch.Consume(
-		q.Name,                     // queue
-		exchaneName+"-"+queueSufix, // consumer
-		true,                       // auto-ack
-		false,                      // exclusive
-		false,                      // no-local
-		false,                      // no-wait
-		nil,                        // args
-	)
-	env.FailOnError(err, "Failed to register a consumer")
-	return msgs
+	env.FailOnError(err, "Error when trying declare exchange")
+	return ch
 }
+
+func Confirm() {
+
+}
+
+func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string) *amqp.Channel {
+	c := DeclareExchange(ch, exchangeName)
+	c.Publish(exchangeName, "", false, false, amqp.Publishing{ ContentType: "application/json", Body: msg.Value})
+}
+
