@@ -1,13 +1,17 @@
 package main 
 
 import (
-	"io/ioutil"
 	"rabbitmq-http-publisher/app/infrastructure/ginlogrus"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
+type Payload struct {
+	ExchangeName string   `json:"exchangeName"`
+	Topic string   `json:"topic"`
+	Data map[string]interface{} `json:"data"`
+}
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -22,12 +26,14 @@ func main() {
 	})
 
 	r.POST("/payload", func(c *gin.Context) {
-		body, err := ioutil.ReadAll(c.Request.Body);
-		if err != nil {
-			log.Error(err)
-			c.Error(err);
+		var json Payload
+		if err := c.ShouldBindJSON(&json); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
 		}
-		log.Println(body)
+		
+		log.Println(json)
+		
 		c.Status(202)
 	})
 	r.Run("0.0.0.0:9000") // listen and serve on 0.0.0.0:8080
