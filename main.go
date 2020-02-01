@@ -1,17 +1,12 @@
 package main 
 
 import (
+	"rabbitmq-http-publisher/app/application/dto"
 	"rabbitmq-http-publisher/app/infrastructure/ginlogrus"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
-
-type Payload struct {
-	ExchangeName string   `json:"exchangeName"`
-	Topic string   `json:"topic"`
-	Data map[string]interface{} `json:"data"`
-}
 
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
@@ -26,7 +21,7 @@ func main() {
 	})
 
 	r.POST("/payload", func(c *gin.Context) {
-		var json Payload
+		var json dto.Payload
 		if err := c.ShouldBindJSON(&json); err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
