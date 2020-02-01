@@ -8,7 +8,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func logReq(q int, messagesChannel chan *dto.Payload) {
+	for d := range messagesChannel {
+		log.Errorln(d)
+		log.Println(q)
+	}
+}
+
+func produceConsumers(q int, messagesChannel chan *dto.Payload) {
+	for index := 0; index < q; index++ {
+		go logReq(index, messagesChannel)
+	}
+}
+
+
 func main() {
+	ch := make(chan *dto.Payload)
+	produceConsumers(10, ch)
 	log.SetFormatter(&log.JSONFormatter{})
 	logg := log.New()
 	r := gin.New()
@@ -27,7 +43,7 @@ func main() {
 			return
 		}
 		
-		log.Println(json)
+		ch <- &json
 		
 		c.Status(202)
 	})
