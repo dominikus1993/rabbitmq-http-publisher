@@ -3,6 +3,7 @@ package main
 import (
 	"rabbitmq-http-publisher/app/application/dto"
 	"rabbitmq-http-publisher/app/infrastructure/ginlogrus"
+	"runtime"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -23,9 +24,10 @@ func produceConsumers(q int, messagesChannel chan *dto.Payload) {
 
 
 func main() {
-	ch := make(chan *dto.Payload)
-	produceConsumers(10, ch)
 	log.SetFormatter(&log.JSONFormatter{})
+	ch := make(chan *dto.Payload)
+	log.Println(runtime.NumCPU())
+	produceConsumers(runtime.NumCPU(), ch)
 	logg := log.New()
 	r := gin.New()
 	r.Use(ginlogrus.Logger(logg))
