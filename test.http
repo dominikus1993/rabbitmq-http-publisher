@@ -5,6 +5,6 @@ Content-Type: : application/json
     "exchangeName": "test",
     "topic": "Order.Cancel",
     "data": {
-        "b": 4
+        "b": { "c" : { "d": true }}
     }
 }

@@ -13,7 +13,7 @@ type Confirmable interface {
 
 
 func GetAmpqConnection() string {
-	return env.GetEnvOrDefault("RabbitMq__Connection", "amqp://guest:guest@127.0.0.1:5672/")
+	return env.GetEnvOrDefault("RabbitMq__Connection", "amqp://guest:guest@rabbitmq:5672/")
 }
 
 func ConnectToRabbitMq(ampqConnectionString string) *amqp.Connection {
@@ -55,10 +55,8 @@ func DeclareExchange(ch *amqp.Channel, exchaneName string) *amqp.Channel {
 }
 
 
-func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string) func (message *[]byte) error {
+func PublishMessage(ch *amqp.Channel, exchangeName, routeKey string, message *[]byte) error {
 	c := DeclareExchange(ch, exchangeName)
-	return func (message *[]byte) error {
-		return c.Publish(exchangeName, routeKey, false, false, amqp.Publishing{ ContentType: "application/json", Body: *message})
-	};
+	return c.Publish(exchangeName, routeKey, false, false, amqp.Publishing{ ContentType: "application/json", Body: *message});
 }
 

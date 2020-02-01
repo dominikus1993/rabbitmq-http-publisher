@@ -1,24 +1,31 @@
 package main 
 
 import (
+	"encoding/json"
 	"rabbitmq-http-publisher/app/application/dto"
 	"rabbitmq-http-publisher/app/infrastructure/ginlogrus"
+	"rabbitmq-http-publisher/app/infrastructure/rabbitmq"
 	"runtime"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"github.com/streadway/amqp"
 )
 
-func logReq(q int, messagesChannel chan *dto.Payload) {
+func logReq(ch *amqp.Channel, messagesChannel chan *dto.Payload) {
 	for d := range messagesChannel {
-		log.Errorln(d)
-		log.Println(q)
+		b, err := json.Marshal(d.Data)
+		if err != nil {
+			log.Error(err);
+		} else {
+			rabbitmq.PublishMessage(ch, d.ExchangeName, d.Topic, &b)
+		}
 	}
 }
 
-func produceConsumers(q int, messagesChannel chan *dto.Payload) {
+func produceConsumers(q int, ch *amqp.Channel, messagesChannel chan *dto.Payload) {
 	for index := 0; index < q; index++ {
-		go logReq(index, messagesChannel)
+		go logReq(ch, messagesChannel)
 	}
 }
 
@@ -26,8 +33,12 @@ func produceConsumers(q int, messagesChannel chan *dto.Payload) {
 func main() {
 	log.SetFormatter(&log.JSONFormatter{})
 	ch := make(chan *dto.Payload)
-	log.Println(runtime.NumCPU())
-	produceConsumers(runtime.NumCPU(), ch)
+
+	rabbitMqConnection := rabbitmq.ConnectToRabbitMq(rabbitmq.GetAmpqConnection())
+	rabbitMqChannel := rabbitmq.CreateChannel(rabbitMqConnection)
+	defer rabbitmq.CloseRabbit(rabbitMqConnection, rabbitMqChannel)
+
+	produceConsumers(runtime.NumCPU(), rabbitMqChannel, ch)
 	logg := log.New()
 	r := gin.New()
 	r.Use(ginlogrus.Logger(logg))
